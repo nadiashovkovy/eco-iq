@@ -7,9 +7,12 @@ function App() {
 
   const [isVisible, setIsVisible] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
-  const [inputValue, setInputValue] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+
+  // ouput:
   const [chartData, setChartData] = useState([30, 30, 30]);
+  const [url, setUrl] = useState('');
+  const [analysis, setAnalysis] = useState('');
 
   useEffect(() => {
     const timer = setTimeout(() => setIsVisible(true), 100); 
@@ -18,9 +21,14 @@ function App() {
 
   // this effect is for when the user submits a url
   const handleSubmit = async () => {
-    if (!inputValue.trim()) {
-      // if empty, show an error message
+    const urlRegex = /^(https?:\/\/)?([\w-]+\.)+[\w-]{2,}(\/[\w-]*)*\/?$/; // check if url is valid
+
+    if (!url.trim()) {
+      // if no input
       setErrorMessage('Please enter a URL before submitting.');
+    } else if (!urlRegex.test(url.trim())) {
+      // if not a valid url
+      setErrorMessage('Please enter a valid URL.');
     } else {
       // if input is valid, proceed
       setErrorMessage(''); // clear previous
@@ -28,26 +36,36 @@ function App() {
       setChartData([30,30,30]);
 
       try {
-        // scrape the URL
-        const response = await fetch('http://localhost:5000/scrape', {
+        const response = await fetch('http://127.0.0.1:5000/analyze', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ url: inputValue }),
+          body: JSON.stringify({ url }),
         });
   
         if (response.ok) {
           const data = await response.json();
-          console.log('Sustainability score:', data);
+          console.log("GPT Analysis:", data);
+
+        setAnalysis(data);
+
+        // update when response is received
+        setChartData([
+          data.environmental_impact.score, 
+          data.supply_chain_resources.score,
+          data.business_operations.score,
+        ]);
+
+        setAnalysis(data); 
         } else {
           const errorData = await response.json();
-          setErrorMessage(errorData.error || 'Something went wrong');
+          setErrorMessage(errorData.error || 'Something went wrong.');
         }
       } catch (error) {
-        setErrorMessage('Error connecting to the backend');
+        setErrorMessage('Error connecting to the backend.');
       }
-    }
+    };
   };
 
   return (
@@ -67,8 +85,8 @@ function App() {
         {!isSubmitted ? (
           <>
             <img src={logo} className="App-logo" alt="logo" />
-            <p>Enter a url to get started!</p>
-            <input type="text" placeholder="Enter the name of a company/business..." value={inputValue} onChange={(e) => setInputValue(e.target.value)}/>
+            <p>Uncover the Sustainability of a Preferred Business</p>
+            <input type="text" placeholder="Enter the url of a company/business..." value={url} onChange={(e) => setUrl(e.target.value)}/>
             {errorMessage && <h className="error-message">{errorMessage}</h>} 
             <div>
               <button className="submit-button enlarge-on-hover" onClick={handleSubmit}>
@@ -78,13 +96,40 @@ function App() {
             </div>
           </>
         ) : ( // if the user submits a url, we will show the breakdown of the company's sustainability
-          <section id = "display-output" className={`display-output fade-in ${isVisible ? 'visible' : ''}`}>
-            <h1>Sustainablity Index Score For :</h1>
-            <p>Find out why Below</p>
-            <div className="pie-chart-container">
-              <PieChart data={chartData} />
-            </div>
-          </section>
+          isSubmitted && analysis ? ( // Check if the user has submitted and analysis is loaded
+            <section id="display-output" className={`display-output fade-in ${isVisible ? 'visible' : ''}`}>
+              <button
+              className="redo-button"
+              onClick={() => window.location.reload()} 
+              >
+                <img
+                  src="/images/redo-icon.png" 
+                  alt="Redo"
+                  style={{ width: '30px', height: '30px' }}
+                />
+              </button>
+
+              <h1>Sustainability Index Score For {analysis.company_name}: {analysis.overall_score}% </h1>
+              <p>Click on the Different Sections to Learn More</p>
+              <div className="pie-chart-container">
+                <PieChart 
+                  data={{
+                    scores: chartData, 
+                    overallScore: analysis.overall_score, 
+                    descriptions: [
+                      analysis.environmental_impact?.description || 'No data available',
+                      analysis.supply_chain_resources?.description || 'No data available',
+                      analysis.business_operations?.description || 'No data available',
+                    ]
+                  }} 
+                />
+              </div>
+
+
+            </section>
+          ) : (
+            <p>Loading analysis...</p> // Show a loading message while waiting for analysis
+          )
         )}
 
 
