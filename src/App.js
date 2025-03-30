@@ -36,7 +36,8 @@ function App() {
       setChartData([30,30,30]);
 
       try {
-        const response = await fetch('http://127.0.0.1:5000/analyze', {
+        const backendUrl = process.env.REACT_APP_BACKEND_URL; 
+        const response = await fetch(`${backendUrl}/analyze`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -96,7 +97,7 @@ function App() {
             </div>
           </>
         ) : ( // if the user submits a url, we will show the breakdown of the company's sustainability
-          isSubmitted && analysis ? ( // Check if the user has submitted and analysis is loaded
+          isSubmitted && analysis ? ( // check if the user has submitted and analysis is loaded
             <section id="display-output" className={`display-output fade-in ${isVisible ? 'visible' : ''}`}>
               <button
               className="redo-button"
