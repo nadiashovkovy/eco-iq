@@ -128,7 +128,9 @@ function App() {
 
             </section>
           ) : (
-            <p>Loading analysis...</p> // Show a loading message while waiting for analysis
+            <p className="loading-message">
+              Loading analysis<span className="dots">...</span>
+            </p>
           )
         )}
 
@@ -137,6 +139,7 @@ function App() {
 
       <section id = "footer" className="footer"> 
         <img src="/images/footer.png" className="footer-image" alt="footer" />
+        <p className="footer-text">made with love by nadia shovkovy</p>
       </section>
 
     </div>
